@@ -1,4 +1,5 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <vector>
 using namespace std;
 
 int main() {
@@ -24,7 +25,19 @@ int main() {
         lrc += (count % 2 == 0) ? '0' : '1';
     }
 
-    cout << "LRC = " << lrc;
+    cout << "LRC = " << lrc << endl;
+
+    // Result Check (added part)
+    string received;
+    cout << "Enter received LRC: ";
+    cin >> received;
+
+    int error = 0;
+
+    if(received != lrc)
+        error = 1;
+
+    cout << "Result = " << error;
 
     return 0;
 }
