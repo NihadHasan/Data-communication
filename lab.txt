@@ -1,0 +1,527 @@
+
+
+
+1    =======-----Digital To Degital
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Take user input
+user_input = input("Enter bits: : ")
+
+# Convert input string into list of integers
+bits = [int(b) for b in user_input.replace(" ", "")]
+
+def step(levels, h=1):
+    x = np.arange(0, len(levels)+1) * h
+    return x, np.r_[levels, levels[-1]]
+
+def nrzi(bits):
+    levels, cur = [], -1
+    for b in bits:
+        if b == 1:
+            cur *= -1
+        levels.append(cur)
+    return levels
+
+def diff_manchester(bits):
+    levels, cur = [], 1
+    for b in bits:
+        if b == 0:
+            cur *= -1
+        levels += [cur, -cur]
+        cur = -cur
+    return levels
+
+encodings = [
+    ("Unipolar NRZ", [1 if b else 0 for b in bits], 1),
+    ("Polar NRZ-L", [1 if b else -1 for b in bits], 1),
+    ("Polar NRZ-I", nrzi(bits), 1),
+    ("Polar RZ", [v for b in bits for v in ([1,0] if b else [-1,0])], 0.5),
+    ("Manchester", [v for b in bits for v in ([1,-1] if b else [-1,1])], 0.5),
+    ("Diff Manchester", diff_manchester(bits), 0.5),
+]
+
+fig, axs = plt.subplots(len(encodings), 1, figsize=(10, 12), sharex=True)
+
+for ax, (name, levels, h) in zip(axs, encodings):
+    x, y = step(levels, h)
+    ax.step(x, y, where='post')
+    ax.set_ylim(-1.5, 1.5)
+    ax.set_title(name)
+    ax.grid()
+
+plt.tight_layout()
+plt.show()
+
+
+
+
+2    ========-----------Analog To Degital----------
+
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# User Inputs
+fm = int(input("Enter message frequency (Hz): "))
+fs = int(input("Enter continuous sampling frequency: "))
+sample_rate = int(input("Enter number of samples: "))
+levels = int(input("Enter quantization levels: "))
+
+# Time axis
+t = np.linspace(0, 1, fs)
+
+# Analog Signal
+analog = np.sin(2 * np.pi * fm * t)
+
+# Sampling
+ts = np.linspace(0, 1, sample_rate)
+samples = np.sin(2 * np.pi * fm * ts)
+
+# Quantization
+quantized = np.round((samples + 1) * (levels - 1) / 2)
+
+# Number of bits required
+bits = int(np.ceil(np.log2(levels)))
+
+# Convert Quantized Values to Binary
+binary = [format(int(q), f'0{bits}b') for q in quantized]
+
+# Display Results
+print("\nSampled Values:")
+print(samples)
+
+print("\nQuantized Values:")
+print(quantized)
+
+print("\nBinary Codes:")
+print(binary)
+
+# Plotting
+plt.figure(figsize=(10, 7))
+
+# Analog Signal
+plt.subplot(3, 1, 1)
+plt.plot(t, analog)
+plt.title("Analog Signal")
+plt.grid()
+
+# Sampled Signal
+plt.subplot(3, 1, 2)
+plt.stem(ts, samples)
+plt.title("Sampled Signal")
+plt.grid()
+
+# Quantized Signal
+plt.subplot(3, 1, 3)
+plt.step(ts, quantized, where='mid')
+plt.title("Quantized Signal")
+plt.grid()
+
+plt.tight_layout()
+plt.show()
+
+
+# Enter message frequency (Hz): 5
+# Enter continuous sampling frequency: 1000
+# Enter number of samples: 20
+# Enter quantization levels: 8
+
+
+
+
+3    ====== Degital To analog======
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# User Input
+user_input = input("Enter bits: ")
+bits = [int(b) for b in user_input.replace(" ", "")]
+
+spb = 100   # Samples per bit
+fc = 5      # Carrier frequency
+
+digital = []
+ask = []
+fsk = []
+psk = []
+time = []
+
+for i, bit in enumerate(bits):
+
+    t = np.linspace(i, i + 1, spb)
+    time.extend(t)
+
+    # Digital Signal
+    digital.extend([bit] * spb)
+
+    # ASK Modulation
+    amp = 1 if bit == 1 else 0.2
+    ask.extend(amp * np.sin(2 * np.pi * fc * t))
+
+    # FSK Modulation
+    freq = 8 if bit == 1 else 3
+    fsk.extend(np.sin(2 * np.pi * freq * t))
+
+    # PSK Modulation
+    phase = 0 if bit == 1 else np.pi
+    psk.extend(np.sin(2 * np.pi * fc * t + phase))
+
+# Plotting
+plt.figure(figsize=(10, 8))
+
+# Digital Signal
+plt.subplot(4, 1, 1)
+plt.plot(time, digital)
+plt.title("Digital Signal")
+plt.ylim(-0.5, 1.5)
+plt.grid()
+
+# ASK
+plt.subplot(4, 1, 2)
+plt.plot(time, ask)
+plt.title("ASK Modulation")
+plt.grid()
+
+# FSK
+plt.subplot(4, 1, 3)
+plt.plot(time, fsk)
+plt.title("FSK Modulation")
+plt.grid()
+
+# PSK
+plt.subplot(4, 1, 4)
+plt.plot(time, psk)
+plt.title("PSK Modulation")
+plt.grid()
+
+plt.tight_layout()
+plt.show()
+
+# 1 0 1 1 0 0 1 0
+
+
+
+
+4    ===========Analog to Analog=======
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# User Inputs
+fm = int(input("Enter message frequency (Hz): "))
+fc = int(input("Enter carrier frequency (Hz): "))
+
+# Time axis
+t = np.linspace(0, 1, 1000)
+
+# Message Signal
+message = np.sin(2 * np.pi * fm * t)
+
+# Carrier Signal
+carrier = np.sin(2 * np.pi * fc * t)
+
+# AM Modulation
+am = (1 + message) * carrier
+
+# FM Modulation
+kf = 5   # Frequency sensitivity
+fm_signal = np.sin(2 * np.pi * fc * t + kf * np.cumsum(message) / 1000)
+
+# PM Modulation
+kp = 1   # Phase sensitivity
+pm_signal = np.sin(2 * np.pi * fc * t + kp * message)
+
+# Plotting
+plt.figure(figsize=(10, 8))
+
+# Message Signal
+plt.subplot(4, 1, 1)
+plt.plot(t, message)
+plt.title("Message Signal")
+plt.grid()
+
+# AM Signal
+plt.subplot(4, 1, 2)
+plt.plot(t, am)
+plt.title("Amplitude Modulation (AM)")
+plt.grid()
+
+# FM Signal
+plt.subplot(4, 1, 3)
+plt.plot(t, fm_signal)
+plt.title("Frequency Modulation (FM)")
+plt.grid()
+
+# PM Signal
+plt.subplot(4, 1, 4)
+plt.plot(t, pm_signal)
+plt.title("Phase Modulation (PM)")
+plt.grid()
+
+plt.tight_layout()
+plt.show()
+
+# Enter message frequency (Hz): 5
+# Enter carrier frequency (Hz): 50
+
+
+
+
+
+======== Hamming code========
+
+
+data = input("Enter data bits: ")
+def generate_hamming(data):
+
+    l = list(map(int, data))
+    # Data bits
+    d7 = l[0]
+    d6 = l[1]
+    d5 = l[2]
+    d3 = l[3]
+
+    # Calculate parity bits
+    p1 = d3 + d5 + d7
+    p2 = d3 + d6 + d7
+    p4 = d5 + d6 + d7
+    
+    p1 = 0 if(p1 % 2 ==0) else 1
+    p2 = 0 if(p2 % 2 ==0) else 1
+    p4 = 0 if(p4 % 2 ==0) else 1
+    
+    hamming_code = [d7 , d6 , d5 , p4 , d3, p2 , p1]
+    
+    output = ''.join(map(str , hamming_code))
+    
+    return output
+
+# Function to detect and correct error
+def detect_and_correct(code):
+
+    b = list(map(int, code))
+
+    # Received bits
+    d7 = b[0]
+    d6 = b[1]
+    d5 = b[2]
+    p4 = b[3]
+    d3 = b[4]
+    p2 = b[5]
+    p1 = b[6]
+
+    # Recalculate parity bits
+    c1 = p1 + d3 + d5 + d7
+    c2 = p2 + d3 + d6 + d7
+    c4 = p4 + d5 + d6 + d7
+    c1 = 0 if (c1 % 2 == 0) else 1
+    c2 = 0 if (c2 % 2 == 0) else 1
+    c4 = 0 if (c4 % 2 == 0) else 1
+    
+    # Find error position
+    error_position = c4 * 4 + c2 * 2 + c1
+
+    # Correct error if exists
+    if error_position != 0:
+
+        print("\nError Detected at Position:", error_position)
+
+        # Flip the bit
+        b[7-error_position] ^= 1
+
+        print("Corrected Code:")
+        corrected_code = ''.join(map(str , b))
+        print (corrected_code)
+
+    else:
+        print("\nNo Error Detected")
+
+    return b
+
+
+
+data = input("Enter 4-bit binary data: ")
+
+# Generate Hamming Code
+hamming_code = generate_hamming(data)
+
+print("Generated Hamming Code : " , hamming_code )
+
+
+	
+# Receive code
+received = input("\nEnter received 7-bit code: ")
+
+# Detect and Correct Error
+detect_and_correct(received)
+
+# Enter 4-bit data: 1011
+
+
+
+
+=============== CRC ==========
+
+
+
+
+#include <iostream>
+using namespace std;
+
+string crc(string data, string key)
+{
+    for (int i = 0; i <= data.size() - key.size(); i++)
+    {
+        if (data[i] == '1')
+        {
+            for (int j = 0; j < key.size(); j++)
+            {
+                if (data[i + j] == key[j])
+                    data[i + j] = '0';
+                else
+                    data[i + j] = '1';
+            }
+        }
+    }
+
+    return data.substr(data.size() - key.size() + 1);
+}
+
+int main()
+{
+    string data, key;
+
+    cout << "Enter data: ";
+    cin >> data;
+
+    cout << "Enter key: ";
+    cin >> key;
+
+    string rem =
+        crc(data + string(key.size()-1, '0'), key);
+
+    string codeword = data + rem;
+
+    cout << "\nRemainder: " << rem << endl;
+    cout << "Codeword: " << codeword << endl;
+
+    string received;
+
+    cout << "\nEnter received codeword: ";
+    cin >> received;
+
+    string check = crc(received, key);
+
+    cout << "Receiver Remainder: " << check << endl;
+
+    if (check == string(key.size()-1, '0'))
+        cout << "No Error Detected";
+    else
+        cout << "Error Detected";
+}
+
+
+
+
+
+=======LRC =========
+
+
+
+
+#include <iostream>
+#include <vector>
+using namespace std;
+
+int main() {
+    int n;
+    cout << "Enter number of blocks: ";
+    cin >> n;
+
+    vector<string> data(n);
+
+    cout << "Enter binary blocks:\n";
+    for(int i = 0; i < n; i++)
+        cin >> data[i];
+
+    string lrc = "";
+
+    for(int j = 0; j < data[0].size(); j++) {
+        int count = 0;
+
+        for(int i = 0; i < n; i++)
+            if(data[i][j] == '1')
+                count++;
+
+        lrc += (count % 2 == 0) ? '0' : '1';
+    }
+
+    cout << "LRC = " << lrc << endl;
+
+    // Result Check (added part)
+    string received;
+    cout << "Enter received LRC: ";
+    cin >> received;
+
+    int error = 0;
+
+    if(received != lrc)
+        error = 1;
+
+    cout << "Result = " << error;
+
+    return 0;
+}
+
+
+
+
+======== VRC =======
+
+
+
+
+
+#include <iostream>
+using namespace std;
+
+int main() {
+
+    int n;
+    cout << "Enter number of blocks: ";
+    cin >> n;
+
+    string data[10];
+
+    cout << "Enter binary blocks:\n";
+    for(int i = 0; i < n; i++)
+        cin >> data[i];
+
+    cout << "\nVRC Output:\n";
+
+    for(int i = 0; i < n; i++) {
+
+        int count = 0;
+
+        for(int j = 0; j < data[i].size(); j++)
+            if(data[i][j] == '1')
+                count++;
+
+        if(count % 2 == 0)
+            cout << data[i] << "0" << endl;
+        else
+            cout << data[i] << "1" << endl;
+    }
+
+    return 0;
+}
